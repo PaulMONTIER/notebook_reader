@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Notebook {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  fileName    String
+  fileContent String        // JSON content of the .ipynb file
+  metadata    String?       // JSON for additional metadata (kernelspec, language_info, etc.)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  highlights  Highlight[]
+  annotations Annotation[]
+  quizzes     Quiz[]
+}
+
+model Highlight {
+  id          String   @id @default(cuid())
+  notebookId  String
+  cellIndex   Int      // Index of the cell in the notebook
+  startOffset Int      // Start position in the cell content
+  endOffset   Int      // End position in the cell content
+  color       String   // Highlight color (yellow, green, pink, etc.)
+  note        String?  // Optional note attached to the highlight
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  notebook    Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+}
+
+model Annotation {
+  id         String   @id @default(cuid())
+  notebookId String
+  cellIndex  Int      // Index of the cell in the notebook
+  content    String   // The annotation text
+  position   String?  // JSON for position data (line, column, etc.)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  notebook   Notebook @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+}
+
+model Quiz {
+  id          String        @id @default(cuid())
+  notebookId  String
+  title       String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  notebook    Notebook      @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  questions   QuizQuestion[]
+  results     QuizResult[]
+}
+
+model QuizQuestion {
+  id            String   @id @default(cuid())
+  quizId        String
+  question      String
+  questionType  String   // "multiple_choice", "true_false", "short_answer"
+  options       String?  // JSON array of options for multiple choice
+  correctAnswer String   // The correct answer
+  explanation   String?  // Explanation for the answer
+  order         Int      // Order of the question in the quiz
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model QuizResult {
+  id           String   @id @default(cuid())
+  quizId       String
+  score        Int      // Number of correct answers
+  totalQuestions Int
+  answers      String   // JSON array of user answers
+  completedAt  DateTime @default(now())
+  quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
