@@ -37,7 +37,9 @@ jobs:
         run: npx prisma generate
 
       - name: Build with Next.js
-        run: npm run build
+        run: |
+          rm -rf src/app/api
+          npx next build
         env:
           GITHUB_PAGES: "true"
 
